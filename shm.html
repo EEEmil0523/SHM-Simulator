@@ -2,129 +2,201 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>SHM Lab</title>
+<title>SHM 模擬器（高中版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-html, body {
-    margin: 0;
-    height: 100%;
-    background: #0b0214;
-    color: #e9d5ff;
-    font-family: system-ui;
+body {
+  margin: 0;
+  height: 100vh;
+  background: #0b0214;
+  color: #e9d5ff;
+  font-family: system-ui;
+  display: flex;
 }
-
 .container {
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    height: 100%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  width: 100%;
+  height: 100%;
 }
-
+.canvas-container {
+  display: grid;
+  grid-template-rows: 2fr 1fr;
+  gap: 10px;
+  padding: 10px;
+}
 canvas {
-    background: #12041f;
-    border: 1px solid #3b0764;
+  background: #12041f;
+  border: 1px solid #3b0764;
+  width: 100%;
+  height: 100%;
 }
-
-.left {
-    display: grid;
-    grid-template-rows: 1fr 1fr;
-    gap: 10px;
-    padding: 10px;
+.controls {
+  padding: 15px;
+  border-left: 1px solid #3b0764;
 }
-
-.right {
-    padding: 15px;
-    border-left: 1px solid #3b0764;
+.controls h2 {
+  margin-top: 0;
 }
-
 label {
-    display: block;
-    margin-bottom: 15px;
+  display: block;
+  margin: 10px 0;
 }
-
 input {
-    width: 100%;
+  width: 100%;
 }
+button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  background: #222;
+  color: #e9d5ff;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+button:hover { background: #333; }
+#info { margin-top: 10px; text-align: center; }
 </style>
 </head>
-
 <body>
 
 <div class="container">
-    <div class="left">
-        <canvas id="phase" width="400" height="300"></canvas>
-        <canvas id="xt" width="400" height="300"></canvas>
-    </div>
+  <div class="canvas-container">
+    <canvas id="anim"></canvas>
+    <canvas id="phase"></canvas>
+    <canvas id="xt"></canvas>
+  </div>
 
-    <div class="right">
-        <h2>SHM Parameters</h2>
-        <label>m <input type="range" min="0.5" max="5" step="0.1" id="m" value="1"></label>
-        <label>k <input type="range" min="1" max="30" step="1" id="k" value="10"></label>
-        <label>b <input type="range" min="0" max="5" step="0.1" id="b" value="0"></label>
-        <button onclick="reset()">Reset</button>
-    </div>
+  <div class="controls">
+    <h2>SHM 參數</h2>
+    <label>質量 m <input type="range" id="m" min="0.5" max="5" step="0.1" value="1"></label>
+    <label>彈簧常數 k <input type="range" id="k" min="1" max="30" step="1" value="10"></label>
+    <label>阻尼 b <input type="range" id="b" min="0" max="5" step="0.1" value="0"></label>
+    <label>初始位移 x₀ <input type="range" id="x0" min="-2" max="2" step="0.1" value="1"></label>
+    <label>初始速度 v₀ <input type="range" id="v0" min="-5" max="5" step="0.1" value="0"></label>
+    <button id="enterBtn">ENTER 重置</button>
+    <div id="info"></div>
+  </div>
 </div>
 
 <script>
-let x = 1, v = 0, t = 0;
-let m = 1, k = 10, b = 0;
+const canvas = document.getElementById('anim');
+const phase = document.getElementById('phase');
+const xt = document.getElementById('xt');
 
-const phase = document.getElementById('phase').getContext('2d');
-const xt = document.getElementById('xt').getContext('2d');
+const ctx = canvas.getContext('2d');
+const pctx = phase.getContext('2d');
+const xctx = xt.getContext('2d');
 
-function a(x, v) {
-    return -(k * x + b * v) / m;
-}
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+phase.width = phase.clientWidth;
+phase.height = phase.clientHeight;
+xt.width = xt.clientWidth;
+xt.height = xt.clientHeight;
 
-function step(dt) {
-    const a1 = a(x, v);
-    x += v * dt + 0.5 * a1 * dt * dt;
-    const a2 = a(x, v);
-    v += 0.5 * (a1 + a2) * dt;
-    t += dt;
-}
+const mEl = document.getElementById('m');
+const kEl = document.getElementById('k');
+const bEl = document.getElementById('b');
+const x0El = document.getElementById('x0');
+const v0El = document.getElementById('v0');
+const infoEl = document.getElementById('info');
+const enterBtn = document.getElementById('enterBtn');
 
-function draw() {
-    phase.fillStyle = 'rgba(18,4,31,0.1)';
-    phase.fillRect(0,0,400,300);
-
-    phase.strokeStyle = '#a855f7';
-    phase.beginPath();
-    phase.arc(200 + x*60, 150 - v*30, 3, 0, Math.PI*2);
-    phase.stroke();
-
-    xt.fillStyle = 'rgba(18,4,31,0.1)';
-    xt.fillRect(0,0,400,300);
-    xt.fillStyle = '#e9d5ff';
-    xt.fillRect((t*40)%400, 150 - x*60, 2, 2);
-}
-
-let last = performance.now();
-let acc = 0;
+let x = +x0El.value;
+let v = +v0El.value;
+let t = 0;
+let m = +mEl.value;
+let k = +kEl.value;
+let b = +bEl.value;
 const dt = 1/120;
 
-function loop(now) {
-    acc += (now - last)/1000;
-    last = now;
+// 用於繪製 x-t 軌跡
+let historyX = [];
+let historyT = [];
 
-    while (acc > dt) {
-        step(dt);
-        acc -= dt;
-    }
+function acceleration(x, v) {
+    return -(k*x + b*v)/m;
+}
 
-    draw();
+function step() {
+    const a1 = acceleration(x,v);
+    x += v*dt + 0.5*a1*dt*dt;
+    const a2 = acceleration(x,v);
+    v += 0.5*(a1 + a2)*dt;
+    t += dt;
+    historyX.push(x);
+    historyT.push(t);
+    if(historyX.length > xt.width) { historyX.shift(); historyT.shift(); }
+}
+
+function drawAnim() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const centerY = canvas.height/2;
+    const startX = 100;
+    const massX = canvas.width/2 + x*80;
+
+    // 彈簧
+    ctx.strokeStyle = '#a855f7';
+    ctx.beginPath();
+    ctx.moveTo(startX, centerY);
+    ctx.lineTo(massX-20, centerY);
+    ctx.stroke();
+
+    // 質點
+    ctx.fillStyle = '#4aa3ff';
+    ctx.beginPath();
+    ctx.arc(massX, centerY, 20, 0, Math.PI*2);
+    ctx.fill();
+
+    infoEl.innerHTML = `位移 x = ${x.toFixed(2)} m，速度 v = ${v.toFixed(2)} m/s`;
+}
+
+function drawPhase() {
+    pctx.fillStyle = 'rgba(18,4,31,0.1)';
+    pctx.fillRect(0,0,phase.width,phase.height);
+    pctx.fillStyle = '#ffcc00';
+    const px = phase.width/2 + x*60;
+    const py = phase.height/2 - v*30;
+    pctx.beginPath();
+    pctx.arc(px, py, 3, 0, Math.PI*2);
+    pctx.fill();
+}
+
+function drawXT() {
+    xctx.fillStyle = 'rgba(18,4,31,0.1)';
+    xctx.fillRect(0,0,xt.width,xt.height);
+    xctx.fillStyle = '#e9d5ff';
+    historyX.forEach((val,i)=>{
+        const px = i;
+        const py = xt.height/2 - val*60;
+        xctx.fillRect(px, py, 2, 2);
+    });
+}
+
+function loop() {
+    step();
+    drawAnim();
+    drawPhase();
+    drawXT();
     requestAnimationFrame(loop);
 }
 
-loop(last);
+mEl.oninput = e => m = +e.target.value;
+kEl.oninput = e => k = +e.target.value;
+bEl.oninput = e => b = +e.target.value;
+x0El.oninput = e => x = +e.target.value;
+v0El.oninput = e => v = +e.target.value;
 
-m.oninput = e => m = +e.target.value;
-k.oninput = e => k = +e.target.value;
-b.oninput = e => b = +e.target.value;
+enterBtn.onclick = () => {
+    x = +x0El.value;
+    v = +v0El.value;
+    t = 0;
+    historyX = [];
+    historyT = [];
+};
 
-function reset() {
-    x = 1; v = 0; t = 0;
-}
+loop();
 </script>
 
 </body>
