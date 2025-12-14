@@ -4,22 +4,23 @@
 <meta charset="UTF-8">
 <title>SHM Simulation Lab</title>
 <style>
-body{margin:0;font-family:'Segoe UI',Tahoma,Verdana,sans-serif;}
+body{margin:0;font-family:'Segoe UI',Tahoma,Verdana,sans-serif;overflow:hidden;}
 
 /* ===== HOME ===== */
-#home{background:#a855f7;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden;}
-#home h1{font-weight:900;font-size:100px;color:#fff;margin:0;}
+#home{background:#a855f7;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;}
+#home h1{font-weight:900;font-size:100px;color:#fff;margin:0;z-index:2;position:relative;}
 #home h1 span{display:inline-block;animation:bounce 0.6s ease-in-out infinite alternate;}
 #home h1 span:nth-child(1){animation-delay:0s;} #home h1 span:nth-child(2){animation-delay:0.1s;}
 #home h1 span:nth-child(3){animation-delay:0.2s;} #home h1 span:nth-child(4){animation-delay:0.3s;}
 #home h1 span:nth-child(5){animation-delay:0.4s;}
 @keyframes bounce{0%{transform:translateY(0);}50%{transform:translateY(-25px);}100%{transform:translateY(0);}}
-.eye{position:absolute;width:60px;height:60px;background:#fff;border:2px solid #000;border-radius:50%;top:30%;overflow:hidden;}
-.eye.left{left:35%;} .eye.right{right:35%;}
-.pupil{position:absolute;width:20px;height:20px;background:#000;border-radius:50%;top:20px;left:20px;transition: transform 0.1s linear;}
+.eye{position:absolute;width:120px;height:120px;background:#fff;border:4px solid #000;border-radius:50%;top:15%;overflow:hidden;z-index:1;}
+.eye.left{left:25%;} .eye.right{right:25%;}
+.pupil{position:absolute;width:40px;height:40px;background:#000;border-radius:50%;top:40px;left:40px;transition: transform 0.1s linear;}
 .eye::before{content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:#a855f7;transform:scaleY(0);transform-origin:top;animation:blink 5s infinite;}
 @keyframes blink{0%,90%,100%{transform:scaleY(0);}92%,94%{transform:scaleY(1);}}
-#enter{margin-top:40px;padding:12px 24px;font-size:18px;border:none;cursor:pointer;background:#111;color:#fff;transition:all 0.1s;box-shadow:0 4px #0c0c0c;border-radius:6px;}
+
+#enter{margin-top:40px;padding:12px 20px;font-size:18px;border:none;cursor:pointer;background:#111;color:#fff;transition:all 0.1s;box-shadow:0 4px #0c0c0c;border-radius:6px;}
 #enter:hover{background:#222;}
 #enter:active{transform:translateY(4px);box-shadow:0 1px #0c0c0c;background:#222;}
 
@@ -92,7 +93,7 @@ function movePupil(eye,pupil){
   const rect=eye.getBoundingClientRect();
   const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
   const dx=mouseX-cx, dy=mouseY-cy;
-  const angle=Math.atan2(dy,dx), r=10;
+  const angle=Math.atan2(dy,dx), r=30;
   const targetX=r*Math.cos(angle), targetY=r*Math.sin(angle);
   const current=eye._current||{x:0,y:0};
   current.x += (targetX - current.x)*0.15;
@@ -115,12 +116,10 @@ function resetSim(){x=+x0.value;v=+v0.value;a=acc(x,v,t);t=0;}
 function singleStep(){step();draw();}
 function step(){const dtv=+dt.value;v+=0.5*a*dtv;x+=v*dtv;a=acc(x,v,t);v+=0.5*a*dtv;t+=dtv;}
 function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
-  // 彈簧
   const startX=50,endX=200+x*50,y=canvas.height/2;
   const seg=12; ctx.strokeStyle="#888"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(startX,y);
   for(let i=1;i<=seg;i++){let px=startX+(endX-startX)/seg*i;let py=y+(i%2===0?5:-5);if(i===seg)py=y;ctx.lineTo(px,py);}
   ctx.stroke();
-  // 球
   ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(endX+20,y,12,0,Math.PI*2); ctx.fill();
 }
 function loop(){if(!paused){step();draw();} requestAnimationFrame(loop);}
