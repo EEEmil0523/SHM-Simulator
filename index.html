@@ -1,201 +1,41 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>簡諧運動教學模擬器</title>
-<style>
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-  background: #111;
-  color: #eee;
-}
-
-h1 {
-  text-align: center;
-  margin: 10px 0;
-  font-weight: 500;
-}
-
-.container {
-  display: flex;
-  height: calc(100vh - 50px);
-}
-
-.controls {
-  width: 300px;
-  padding: 15px;
-  border-right: 1px solid #333;
-  overflow-y: auto;
-}
-
-.controls h2 {
-  font-size: 16px;
-  margin-top: 15px;
-  border-bottom: 1px solid #333;
-}
-
-.control {
-  margin: 8px 0;
-  font-size: 13px;
-}
-
-.control input {
-  width: 100%;
-}
-
-button {
-  width: 100%;
-  margin-top: 5px;
-  padding: 6px;
-  background: #222;
-  color: #eee;
-  border: 1px solid #444;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #333;
-}
-
-#canvas-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-canvas {
-  background: #000;
-  border: 1px solid #333;
-}
-#info {
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: center;
-}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HELLO</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<h1>簡諧運動教學模擬器</h1>
 
-<div class="container">
-  <div class="controls">
-
-    <h2>系統參數</h2>
-    <div class="control">質量 m
-      <input type="range" id="m" min="0.5" max="5" step="0.1" value="1">
+<!-- 背景眼睛 -->
+<div class="bg-eyes">
+    <div class="eyes">
+        <div class="eye">
+            <div class="pupil"></div>
+            <div class="eyelid"></div>
+        </div>
+        <div class="eye">
+            <div class="pupil"></div>
+            <div class="eyelid"></div>
+        </div>
     </div>
-    <div class="control">彈性常數 k
-      <input type="range" id="k" min="1" max="50" step="1" value="10">
-    </div>
-    <div class="control">阻尼係數 c
-      <input type="range" id="c" min="0" max="5" step="0.1" value="0.5">
-    </div>
-
-    <h2>外力</h2>
-    <div class="control">外力振幅 F₀
-      <input type="range" id="F0" min="0" max="20" step="0.5" value="0">
-    </div>
-    <div class="control">外力頻率 Ω
-      <input type="range" id="Omega" min="0" max="10" step="0.1" value="2">
-    </div>
-
-    <h2>初始條件</h2>
-    <div class="control">初始位移 x₀
-      <input type="range" id="x0" min="-2" max="2" step="0.1" value="1">
-    </div>
-    <div class="control">初始速度 v₀
-      <input type="range" id="v0" min="-5" max="5" step="0.1" value="0">
-    </div>
-
-    <h2>模擬控制</h2>
-    <div class="control">時間步長 Δt
-      <input type="range" id="dt" min="0.005" max="0.05" step="0.005" value="0.02">
-    </div>
-    <button onclick="paused = !paused">暫停 / 繼續</button>
-    <button onclick="step()">單步模擬</button>
-    <button onclick="reset()">重置</button>
-  </div>
-
-  <div id="canvas-container">
-    <canvas id="anim" width="600" height="250"></canvas>
-  </div>
 </div>
 
-<div id="info"></div>
+<!-- 中央內容 -->
+<div class="center" id="home">
+    <h1>
+        <span>H</span>
+        <span>E</span>
+        <span>L</span>
+        <span>L</span>
+        <span>O</span>
+    </h1>
+    <a href="#" class="btn" id="enterBtn">ENTER</a>
+</div>
 
-<script>
-const canvas = document.getElementById("anim");
-const ctx = canvas.getContext("2d");
+<script src="js/eyes.js"></script>
+<script src="js/main.js"></script>
 
-const mEl = document.getElementById("m");
-const kEl = document.getElementById("k");
-const cEl = document.getElementById("c");
-const F0El = document.getElementById("F0");
-const OmegaEl = document.getElementById("Omega");
-const x0El = document.getElementById("x0");
-const v0El = document.getElementById("v0");
-const dtEl = document.getElementById("dt");
-const infoEl = document.getElementById("info");
-
-let x, v, a, t=0;
-let paused = false;
-
-function acceleration(x, v, t){
-  return (F0El.value * Math.sin(OmegaEl.value * t) - cEl.value*v - kEl.value*x)/mEl.value;
-}
-
-function reset(){
-  x = +x0El.value;
-  v = +v0El.value;
-  a = acceleration(x, v, t);
-  t = 0;
-}
-
-function step(){
-  const dt = +dtEl.value;
-  v += 0.5 * a * dt;
-  x += v * dt;
-  a = acceleration(x, v, t);
-  v += 0.5 * a * dt;
-  t += dt;
-}
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // 畫彈簧
-  const centerY = canvas.height/2;
-  const startX = 50;
-  const massX = 300 + x*50;
-  ctx.strokeStyle = "#888";
-  ctx.beginPath();
-  ctx.moveTo(startX, centerY);
-  ctx.lineTo(massX-20, centerY);
-  ctx.stroke();
-
-  // 畫質點
-  ctx.fillStyle = "#4aa3ff";
-  ctx.beginPath();
-  ctx.arc(massX, centerY, 15, 0, Math.PI*2);
-  ctx.fill();
-
-  // 顯示文字註解
-  infoEl.innerHTML = `
-位移 x = ${x.toFixed(2)} m<br>
-速度 v = ${v.toFixed(2)} m/s<br>
-角頻率 ω = ${Math.sqrt(kEl.value/mEl.value).toFixed(2)} rad/s
-`;
-}
-
-function loop(){
-  if(!paused) step();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-reset();
-loop();
-</script>
 </body>
 </html>
