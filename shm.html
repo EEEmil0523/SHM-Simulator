@@ -2,8 +2,8 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SHM Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 html, body {
@@ -23,8 +23,6 @@ html, body {
 canvas {
     background: #12041f;
     border: 1px solid #3b0764;
-    width: 100%;
-    height: 100%;
 }
 
 .left {
@@ -47,21 +45,6 @@ label {
 input {
     width: 100%;
 }
-
-button {
-    padding: 10px;
-    background: #a855f7;
-    border: none;
-    color: white;
-    cursor: pointer;
-}
-
-a {
-    color: #c084fc;
-    text-decoration: none;
-    display: inline-block;
-    margin-top: 15px;
-}
 </style>
 </head>
 
@@ -69,96 +52,64 @@ a {
 
 <div class="container">
     <div class="left">
-        <canvas id="phase"></canvas>
-        <canvas id="xt"></canvas>
+        <canvas id="phase" width="400" height="300"></canvas>
+        <canvas id="xt" width="400" height="300"></canvas>
     </div>
 
     <div class="right">
         <h2>SHM Parameters</h2>
-
-        <label>m
-            <input type="range" min="0.5" max="5" step="0.1" id="m" value="1">
-        </label>
-
-        <label>k
-            <input type="range" min="1" max="30" step="1" id="k" value="10">
-        </label>
-
-        <label>b
-            <input type="range" min="0" max="5" step="0.1" id="b" value="0">
-        </label>
-
+        <label>m <input type="range" min="0.5" max="5" step="0.1" id="m" value="1"></label>
+        <label>k <input type="range" min="1" max="30" step="1" id="k" value="10"></label>
+        <label>b <input type="range" min="0" max="5" step="0.1" id="b" value="0"></label>
         <button onclick="reset()">Reset</button>
-
-        <br>
-        <a href="index.html">← Back to Home</a>
     </div>
 </div>
 
 <script>
-const phase = document.getElementById('phase');
-const xt = document.getElementById('xt');
-const pctx = phase.getContext('2d');
-const xctx = xt.getContext('2d');
-
-function resize() {
-    phase.width = phase.clientWidth;
-    phase.height = phase.clientHeight;
-    xt.width = xt.clientWidth;
-    xt.height = xt.clientHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
 let x = 1, v = 0, t = 0;
 let m = 1, k = 10, b = 0;
 
-function accel(x, v) {
+const phase = document.getElementById('phase').getContext('2d');
+const xt = document.getElementById('xt').getContext('2d');
+
+function a(x, v) {
     return -(k * x + b * v) / m;
 }
 
 function step(dt) {
-    const a1 = accel(x, v);
+    const a1 = a(x, v);
     x += v * dt + 0.5 * a1 * dt * dt;
-    const a2 = accel(x, v);
+    const a2 = a(x, v);
     v += 0.5 * (a1 + a2) * dt;
     t += dt;
 }
 
 function draw() {
-    pctx.fillStyle = 'rgba(18,4,31,0.15)';
-    pctx.fillRect(0, 0, phase.width, phase.height);
+    phase.fillStyle = 'rgba(18,4,31,0.1)';
+    phase.fillRect(0,0,400,300);
 
-    xctx.fillStyle = 'rgba(18,4,31,0.15)';
-    xctx.fillRect(0, 0, xt.width, xt.height);
+    phase.strokeStyle = '#a855f7';
+    phase.beginPath();
+    phase.arc(200 + x*60, 150 - v*30, 3, 0, Math.PI*2);
+    phase.stroke();
 
-    pctx.fillStyle = '#a855f7';
-    pctx.beginPath();
-    pctx.arc(
-        phase.width / 2 + x * 60,
-        phase.height / 2 - v * 30,
-        3, 0, Math.PI * 2
-    );
-    pctx.fill();
-
-    xctx.fillStyle = '#e9d5ff';
-    xctx.fillRect(
-        (t * 40) % xt.width,
-        xt.height / 2 - x * 60,
-        2, 2
-    );
+    xt.fillStyle = 'rgba(18,4,31,0.1)';
+    xt.fillRect(0,0,400,300);
+    xt.fillStyle = '#e9d5ff';
+    xt.fillRect((t*40)%400, 150 - x*60, 2, 2);
 }
 
 let last = performance.now();
-const dt = 1 / 120;
+let acc = 0;
+const dt = 1/120;
 
 function loop(now) {
-    let delta = (now - last) / 1000;
+    acc += (now - last)/1000;
     last = now;
 
-    while (delta > dt) {
+    while (acc > dt) {
         step(dt);
-        delta -= dt;
+        acc -= dt;
     }
 
     draw();
@@ -172,9 +123,7 @@ k.oninput = e => k = +e.target.value;
 b.oninput = e => b = +e.target.value;
 
 function reset() {
-    x = 1;
-    v = 0;
-    t = 0;
+    x = 1; v = 0; t = 0;
 }
 </script>
 
