@@ -227,6 +227,7 @@ function drawSpring() {
   const endX = 200 + x*50, endY = 125;
   const segments = 12;
   animCtx.strokeStyle = "#888";
+  animCtx.lineWidth = 2;
   animCtx.beginPath();
   animCtx.moveTo(startX,startY);
   for(let i=1;i<=segments;i++){
@@ -244,15 +245,16 @@ function drawSpring() {
 }
 
 // 繪圖自動縮放
-function drawGraph(ctx, data, scaleX, scaleY) {
+function drawGraph(ctx, data, scaleX, scaleY, color="#0f0") {
   ctx.clearRect(0,0,400,250);
-  ctx.strokeStyle = "#0f0";
+  ctx.strokeStyle = color;
   ctx.beginPath();
-  const maxY = Math.max(...data.map(p=>Math.abs(p[1])), 1);
-  const sY = scaleY / maxY;
+  if(data.length===0) return;
+  const maxX = Math.max(...data.map(p=>Math.abs(p[0])),1);
+  const maxY = Math.max(...data.map(p=>Math.abs(p[1])),1);
   data.forEach((p,i)=>{
-    const px = 200 + p[0]*scaleX;
-    const py = 125 - p[1]*sY;
+    const px = 200 + (p[0]/maxX)*scaleX*10;
+    const py = 125 - (p[1]/maxY)*scaleY*50;
     if(i===0) ctx.moveTo(px,py);
     else ctx.lineTo(px,py);
   });
@@ -266,14 +268,14 @@ function loop() {
   phaseData.push([x, v]);
   energyData.push([t, 0.5*k.value*x*x + 0.5*m.value*v*v]);
 
-  xtData = xtData.slice(-300);
-  phaseData = phaseData.slice(-300);
-  energyData = energyData.slice(-300);
+  xtData = xtData.slice(-500);
+  phaseData = phaseData.slice(-500);
+  energyData = energyData.slice(-500);
 
   drawSpring();
-  drawGraph(xtCtx, xtData, 20, 50);
-  drawGraph(phCtx, phaseData, 50, 20);
-  drawGraph(enCtx, energyData, 20, 10);
+  drawGraph(xtCtx, xtData, 20, 50, "#0f0");
+  drawGraph(phCtx, phaseData, 50, 20, "#ff5555");
+  drawGraph(enCtx, energyData, 20, 10, "#ffff00");
 
   requestAnimationFrame(loop);
 }
