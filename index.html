@@ -3,12 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>SHM Simulation Lab</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 /* ===== Global ===== */
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-}
+body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont; }
 
 /* ===== HOME PAGE ===== */
 #home {
@@ -23,9 +21,7 @@ body {
 #home h1 span {
   font-size: 100px;
   color: #fff;
-  text-transform: uppercase;
   display: inline-block;
-  position: relative;
   animation: bounce 0.6s ease-in-out infinite alternate;
 }
 
@@ -35,264 +31,163 @@ body {
 #home h1 span:nth-child(4){animation-delay:0.3s;}
 #home h1 span:nth-child(5){animation-delay:0.4s;}
 
-@keyframes bounce {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-25px); }
-  100% { transform: translateY(0); }
-}
+@keyframes bounce { 0%{transform:translateY(0);} 50%{transform:translateY(-25px);} 100%{transform:translateY(0);} }
 
 #enter {
   margin-top: 40px;
-  padding: 12px 30px;
-  font-size: 16px;
+  padding: 14px 36px;
+  font-size: 18px;
   border: none;
   cursor: pointer;
   background: #111;
   color: #fff;
   transition: all 0.1s ease-in-out;
-  box-shadow: 0 5px #0c0c0c; /* 初始凸起效果 */
+  box-shadow: 0 5px #0c0c0c;
+  border-radius: 6px;
 }
 
 #enter:active {
-  transform: translateY(4px);  /* 按下時往下移 */
-  box-shadow: 0 1px #0c0c0c;  /* 陰影縮小 */
-  background: #222;            /* 顏色稍微變深 */
+  transform: translateY(4px);
+  box-shadow: 0 1px #0c0c0c;
+  background: #222;
 }
 
 /* ===== LAB ===== */
-#lab {
-  display: none;
-  background: #111;
-  color: #eee;
-}
-
-h1 {
-  text-align: center;
-  margin: 10px 0;
-  font-weight: 500;
-}
-
-.container {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  height: calc(100vh - 50px);
-}
-
-.controls {
-  padding: 15px;
-  border-right: 1px solid #333;
-  overflow-y: auto;
-}
-
-.controls h2 {
-  font-size: 16px;
-  margin-top: 15px;
-  border-bottom: 1px solid #333;
-}
-
-.control {
-  margin: 8px 0;
-  font-size: 13px;
-}
-
-.control input {
-  width: 100%;
-}
-
-button {
-  width: 100%;
-  margin-top: 5px;
-  padding: 6px;
-  background: #222;
-  color: #eee;
-  border: 1px solid #444;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #333;
-}
-
-.panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-}
-
-canvas {
-  background: #000;
-  border: 1px solid #333;
-}
+#lab { display: none; background: #111; color: #eee; }
+h1 { text-align: center; margin: 10px 0; font-weight: 500; }
+.container { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 50px); }
+.controls { padding: 15px; border-right: 1px solid #333; overflow-y: auto; }
+.controls h2 { font-size: 16px; margin-top: 15px; border-bottom: 1px solid #333; }
+.control { margin: 8px 0; font-size: 13px; }
+.control input { width: 100%; }
+button { width: 100%; margin-top: 5px; padding: 6px; background: #222; color: #eee; border: 1px solid #444; cursor: pointer; }
+button:hover { background: #333; }
+.panels { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; padding: 10px; }
+canvas { background: #000; border: 1px solid #333; }
+#animCanvas { width: 100%; height: 100%; }
+.chart-container { width: 100%; height: 100%; }
 </style>
 </head>
 <body>
 
 <!-- ===== HOME ===== -->
 <div id="home">
-  <h1>
-    <span>H</span><span>E</span><span>L</span><span>L</span><span>O</span>
-  </h1>
+  <h1><span>H</span><span>E</span><span>L</span><span>L</span><span>O</span></h1>
   <button id="enter">Enter Simulation</button>
 </div>
 
 <!-- ===== LAB ===== -->
 <div id="lab">
 <h1>Simple Harmonic Motion Lab</h1>
-
 <div class="container">
   <div class="controls">
-
     <h2>System Parameters</h2>
-    <div class="control">Mass m
-      <input type="range" id="m" min="0.5" max="5" step="0.1" value="1">
-    </div>
-    <div class="control">Spring constant k
-      <input type="range" id="k" min="1" max="50" step="1" value="10">
-    </div>
-    <div class="control">Damping c
-      <input type="range" id="c" min="0" max="5" step="0.1" value="0.5">
-    </div>
-
+    <div class="control">Mass m<input type="range" id="m" min="0.5" max="5" step="0.1" value="1"></div>
+    <div class="control">Spring k<input type="range" id="k" min="1" max="50" step="1" value="10"></div>
+    <div class="control">Damping c<input type="range" id="c" min="0" max="5" step="0.1" value="0.5"></div>
     <h2>Driving Force</h2>
-    <div class="control">Amplitude F₀
-      <input type="range" id="F0" min="0" max="20" step="0.5" value="0">
-    </div>
-    <div class="control">Frequency Ω
-      <input type="range" id="Omega" min="0" max="10" step="0.1" value="2">
-    </div>
-
+    <div class="control">Amplitude F₀<input type="range" id="F0" min="0" max="20" step="0.5" value="0"></div>
+    <div class="control">Frequency Ω<input type="range" id="Omega" min="0" max="10" step="0.1" value="2"></div>
     <h2>Initial Conditions</h2>
-    <div class="control">x₀
-      <input type="range" id="x0" min="-2" max="2" step="0.1" value="1">
-    </div>
-    <div class="control">v₀
-      <input type="range" id="v0" min="-5" max="5" step="0.1" value="0">
-    </div>
-
+    <div class="control">x₀<input type="range" id="x0" min="-2" max="2" step="0.1" value="1"></div>
+    <div class="control">v₀<input type="range" id="v0" min="-5" max="5" step="0.1" value="0"></div>
     <h2>Simulation</h2>
-    <div class="control">Time step Δt
-      <input type="range" id="dt" min="0.005" max="0.05" step="0.005" value="0.02">
-    </div>
-
+    <div class="control">Time step Δt<input type="range" id="dt" min="0.005" max="0.05" step="0.005" value="0.02"></div>
     <button onclick="paused = !paused">Pause / Resume</button>
-    <button onclick="step()">Single Step</button>
-    <button onclick="reset()">Reset</button>
-
+    <button onclick="singleStep()">Single Step</button>
+    <button onclick="resetSim()">Reset</button>
   </div>
 
   <div class="panels">
-    <canvas id="anim" width="400" height="250"></canvas>
-    <canvas id="xt" width="400" height="250"></canvas>
-    <canvas id="phase" width="400" height="250"></canvas>
-    <canvas id="energy" width="400" height="250"></canvas>
+    <canvas id="animCanvas"></canvas>
+    <div class="chart-container"><canvas id="xtChart"></canvas></div>
+    <div class="chart-container"><canvas id="phaseChart"></canvas></div>
+    <div class="chart-container"><canvas id="energyChart"></canvas></div>
   </div>
 </div>
 </div>
 
 <script>
+// 切換首頁 / Lab
 document.getElementById("enter").onclick = () => {
   document.getElementById("home").style.display = "none";
   document.getElementById("lab").style.display = "block";
 };
 
-const animCtx = document.getElementById("anim").getContext("2d");
-const xtCtx = document.getElementById("xt").getContext("2d");
-const phCtx = document.getElementById("phase").getContext("2d");
-const enCtx = document.getElementById("energy").getContext("2d");
+// SHM 參數
+let x=1, v=0, a=0, t=0, paused=false;
+let xtData=[], phaseData=[], energyData=[];
+const mEl=document.getElementById("m"), kEl=document.getElementById("k"), cEl=document.getElementById("c");
+const F0El=document.getElementById("F0"), OmegaEl=document.getElementById("Omega");
+const x0El=document.getElementById("x0"), v0El=document.getElementById("v0"), dtEl=document.getElementById("dt");
 
-let x, v, a, t = 0;
-let paused = false;
+// Canvas 動畫
+const anim = document.getElementById("animCanvas");
+const ctx = anim.getContext("2d");
 
-let xtData = [], phaseData = [], energyData = [];
-
-function acc(x, v, t) {
-  return (F0.value * Math.sin(Omega.value * t) - c.value * v - k.value * x) / m.value;
-}
-
-function reset() {
-  x = +x0.value;
-  v = +v0.value;
-  a = acc(x, v, t);
-  t = 0;
-  xtData = [];
-  phaseData = [];
-  energyData = [];
-}
-
-function step() {
-  const dtv = +dt.value;
-  v += 0.5 * a * dtv;
-  x += v * dtv;
-  a = acc(x, v, t);
-  v += 0.5 * a * dtv;
-  t += dtv;
-}
-
-// 畫彈簧和白球
-function drawSpring() {
-  animCtx.clearRect(0,0,400,250);
-  const startX = 50, startY = 125;
-  const endX = 200 + x*50, endY = 125;
-  const segments = 12;
-  animCtx.strokeStyle = "#888";
-  animCtx.lineWidth = 2;
-  animCtx.beginPath();
-  animCtx.moveTo(startX,startY);
-  for(let i=1;i<=segments;i++){
-    let px = startX + (endX-startX)/segments*i;
-    let py = startY + ((i%2===0)?5:-5);
-    if(i===segments) py = endY;
-    animCtx.lineTo(px, py);
+// Chart.js
+const xtChart = new Chart(document.getElementById("xtChart"), {
+  type: 'line', data: {datasets:[{label:'x(t)',data:[],borderColor:'#0f0',borderWidth:2,fill:false}]},
+  options:{animation:false,responsive:true,scales:{x:{type:'linear',title:{display:true,text:'t'}},y:{title:{display:true,text:'x'}}}}
+});
+const phaseChart = new Chart(document.getElementById("phaseChart"), {
+  type: 'line',
+  data: {datasets:[{label:'Phase',data:[],borderColor:'#ff5555',borderWidth:2,fill:false,pointRadius:2}]},
+  options:{
+    animation:false,responsive:true,
+    scales:{
+      x:{type:'linear',min:-3,max:3,title:{display:true,text:'x'}},
+      y:{min:-5,max:5,title:{display:true,text:'v'}}
+    }
   }
-  animCtx.stroke();
+});
+const energyChart = new Chart(document.getElementById("energyChart"), {
+  type: 'line', data: {datasets:[{label:'Energy',data:[],borderColor:'#ffff00',borderWidth:2,fill:false}]},
+  options:{animation:false,responsive:true,scales:{x:{type:'linear',title:{display:true,text:'t'}},y:{title:{display:true,text:'E'}}}}
+});
 
-  animCtx.fillStyle = "#fff";
-  animCtx.beginPath();
-  animCtx.arc(endX+20, endY, 12, 0, Math.PI*2);
-  animCtx.fill();
+// 運算
+function acceleration(x,v,t){ return (F0El.value*Math.sin(OmegaEl.value*t)-cEl.value*v-kEl.value*x)/mEl.value; }
+function resetSim(){ x=+x0El.value; v=+v0El.value; a=acceleration(x,v,t); t=0; xtData=[]; phaseData=[]; energyData=[]; }
+function singleStep(){ step(); updateCharts(); drawAnim(); }
+function step(){
+  const dtv=+dtEl.value;
+  v+=0.5*a*dtv; x+=v*dtv; a=acceleration(x,v,t); v+=0.5*a*dtv; t+=dtv;
 }
 
-// 繪圖自動縮放 + 線條平滑
-function drawGraph(ctx, data, color="#0f0") {
-  ctx.clearRect(0,0,400,250);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  if(data.length===0) return;
-
-  const maxX = Math.max(...data.map(p=>Math.abs(p[0])), 1);
-  const maxY = Math.max(...data.map(p=>Math.abs(p[1])), 1);
-
-  data.forEach((p,i)=>{
-    const px = (p[0]/maxX) * 380 + 10;
-    const py = 125 - (p[1]/maxY) * 100;
-    if(i===0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  });
+// 畫彈簧 + 白球
+function drawAnim(){
+  ctx.clearRect(0,0,anim.width,anim.height);
+  const startX=50,startY=anim.height/2,endX=200+x*50,endY=anim.height/2;
+  const segs=12;
+  ctx.strokeStyle="#888"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(startX,startY);
+  for(let i=1;i<=segs;i++){
+    let px=startX+(endX-startX)/segs*i;
+    let py=startY+((i%2===0)?5:-5);
+    if(i===segs) py=endY;
+    ctx.lineTo(px,py);
+  }
   ctx.stroke();
+  ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(endX+20,endY,12,0,Math.PI*2); ctx.fill();
 }
 
-function loop() {
-  if(!paused) step();
-
-  xtData.push([t, x]);
-  phaseData.push([x, v]);
-  energyData.push([t, 0.5*k.value*x*x + 0.5*m.value*v*v]);
-
-  xtData = xtData.slice(-500);
-  phaseData = phaseData.slice(-500);
-  energyData = energyData.slice(-500);
-
-  drawSpring();
-  drawGraph(xtCtx, xtData, "#0f0");
-  drawGraph(phCtx, phaseData, "#ff5555");
-  drawGraph(enCtx, energyData, "#ffff00");
-
-  requestAnimationFrame(loop);
+// 更新 Chart.js
+function updateCharts(){
+  xtData.push({x:t,y:x});
+  phaseData.push({x:x,y:v});
+  energyData.push({x:t,y:0.5*kEl.value*x*x+0.5*mEl.value*v*v});
+  if(xtData.length>1000) xtData.shift();
+  if(phaseData.length>1000) phaseData.shift();
+  if(energyData.length>1000) energyData.shift();
+  xtChart.data.datasets[0].data = xtData;
+  phaseChart.data.datasets[0].data = phaseData;
+  energyChart.data.datasets[0].data = energyData;
+  xtChart.update('none'); phaseChart.update('none'); energyChart.update('none');
 }
 
-reset();
-loop();
+// 主迴圈
+function loop(){ if(!paused){ step(); updateCharts(); drawAnim(); } requestAnimationFrame(loop); }
+resetSim(); loop();
 </script>
 
 </body>
