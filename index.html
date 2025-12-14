@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HELLO</title>
+<title>HELLO + SHM Lab</title>
 <style>
 /* ===== 基本設定 ===== */
 html, body {
@@ -179,12 +179,38 @@ h1 span:nth-child(5) { animation-delay: 0.4s; }
     box-shadow: 0 0 0 0 white;
 }
 
-/* ===== 模擬器容器（初始隱藏） ===== */
+/* ===== SHM 模擬器 ===== */
 #simulator {
     display: none;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
     background: #0b0214;
+    color: #e9d5ff;
+    font-family: system-ui;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#simulator canvas {
+    background: #12041f;
+    border: 1px solid #3b0764;
+    margin: 10px 0;
+}
+
+#controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+#controls label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#controls input {
+    width: 100px;
 }
 </style>
 </head>
@@ -204,70 +230,120 @@ h1 span:nth-child(5) { animation-delay: 0.4s; }
     </div>
 </div>
 
-<!-- 中央內容 -->
+<!-- 首頁 -->
 <div class="center" id="home">
-    <h1>
-        <span>H</span>
-        <span>E</span>
-        <span>L</span>
-        <span>L</span>
-        <span>O</span>
-    </h1>
-
-    <!-- 臉部表情 -->
     <div class="face">
-        <div class="eyes">
-            <div class="eye">
-                <div class="pupil"></div>
-                <div class="eyelid"></div>
-            </div>
-            <div class="eye">
-                <div class="pupil"></div>
-                <div class="eyelid"></div>
-            </div>
-        </div>
+        <h1>
+            <span>H</span>
+            <span>E</span>
+            <span>L</span>
+            <span>L</span>
+            <span>O</span>
+        </h1>
         <div class="mouth"></div>
     </div>
-
     <a href="#" class="btn" id="enterBtn">ENTER</a>
 </div>
 
-<!-- 模擬器容器 -->
+<!-- SHM 模擬器 -->
 <div id="simulator">
-    <!-- 你的 SHM 模擬器 HTML 內容放這裡 -->
+    <canvas id="phase" width="400" height="300"></canvas>
+    <canvas id="xt" width="400" height="300"></canvas>
+    <div id="controls">
+        <label>m <input type="range" id="m" min="0.5" max="5" step="0.1" value="1"></label>
+        <label>k <input type="range" id="k" min="1" max="30" step="1" value="10"></label>
+        <label>b <input type="range" id="b" min="0" max="5" step="0.1" value="0"></label>
+        <button onclick="reset()">Reset</button>
+    </div>
 </div>
 
 <script>
-// 表情控制
+// ===== 眼睛追蹤 =====
+let mouseX = innerWidth / 2;
+let mouseY = innerHeight / 2;
+addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+function followEyes() {
+    document.querySelectorAll('.eye').forEach(eye => {
+        const pupil = eye.querySelector('.pupil');
+        const r = eye.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = mouseX - cx;
+        const dy = mouseY - cy;
+        const angle = Math.atan2(dy, dx);
+        const dist = Math.min(40, Math.hypot(dx, dy) / 8);
+        const prevX = parseFloat(pupil.dataset.x) || 0;
+        const prevY = parseFloat(pupil.dataset.y) || 0;
+        const targetX = Math.cos(angle)*dist;
+        const targetY = Math.sin(angle)*dist;
+        const newX = prevX + (targetX - prevX)*0.2;
+        const newY = prevY + (targetY - prevY)*0.2;
+        pupil.style.transform = `translate(-50%, -50%) translate(${newX}px, ${newY}px)`;
+        pupil.dataset.x = newX;
+        pupil.dataset.y = newY;
+    });
+    requestAnimationFrame(followEyes);
+}
+followEyes();
+
+// ===== ENTER 按鈕 =====
 const face = document.querySelector('.face');
 const enterBtn = document.getElementById('enterBtn');
-const center = document.getElementById('home');
-const simulator = document.getElementById('simulator');
-
-// 鼠標 hover ENTER → 開心
 enterBtn.addEventListener('mouseenter', () => face.classList.add('happy'));
 enterBtn.addEventListener('mouseleave', () => face.classList.remove('happy'));
-
-// 點擊 ENTER → 開心 + 進入模擬器
-enterBtn.addEventListener('click', (e) => {
+enterBtn.addEventListener('click', e => {
     e.preventDefault();
-    face.classList.add('happy');
-    center.style.opacity = 0;
-    setTimeout(() => {
-        center.style.display = 'none';
-        simulator.style.display = 'flex';
-    }, 1000);
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('simulator').style.display = 'flex';
 });
 
-// 眼睛跟隨滑鼠
-const pupils = document.querySelectorAll('.pupil');
-document.addEventListener('mousemove', e => {
-    const x = e.clientX / window.innerWidth;
-    const y = e.clientY / window.innerHeight;
-    pupils.forEach(pupil => {
-        pupil.style.transform = `translate(-50%, -50%) translate(${(x-0.5)*30}px, ${(y-0.5)*30}px)`;
-    });
-});
+// ===== SHM 模擬器 =====
+let x = 1, v = 0, t = 0;
+let m = 1, k = 10, b = 0;
+const phase = document.getElementById('phase').getContext('2d');
+const xt = document.getElementById('xt').getContext('2d');
+
+function a(x, v){ return -(k*x + b*v)/m; }
+function step(dt){
+    const a1 = a(x,v);
+    x += v*dt + 0.5*a1*dt*dt;
+    const a2 = a(x,v);
+    v += 0.5*(a1+a2)*dt;
+    t += dt;
+}
+function draw(){
+    // phase
+    phase.fillStyle='rgba(18,4,31,0.1)';
+    phase.fillRect(0,0,400,300);
+    phase.strokeStyle='#a855f7';
+    phase.beginPath();
+    phase.arc(200 + x*60, 150 - v*30, 3, 0, Math.PI*2);
+    phase.stroke();
+    // x-t
+    xt.fillStyle='rgba(18,4,31,0.1)';
+    xt.fillRect(0,0,400,300);
+    xt.fillStyle='#e9d5ff';
+    xt.fillRect((t*40)%400, 150 - x*60, 2,2);
+}
+
+let last = performance.now(), acc = 0, dt=1/120;
+function loop(now){
+    acc += (now - last)/1000;
+    last = now;
+    while(acc>dt){ step(dt); acc-=dt; }
+    draw();
+    requestAnimationFrame(loop);
+}
+loop(last);
+
+document.getElementById('m').oninput = e => m=+e.target.value;
+document.getElementById('k').oninput = e => k=+e.target.value;
+document.getElementById('b').oninput = e => b=+e.target.value;
+
+function reset(){ x=1; v=0; t=0; }
 </script>
 
 </body>
