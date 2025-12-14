@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>SHM 模擬器（高中版）</title>
+<title>何承蔚好帥</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {
@@ -14,14 +14,14 @@ body {
   display: flex;
 }
 .container {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
   width: 100%;
   height: 100%;
 }
 .canvas-container {
-  display: grid;
-  grid-template-rows: 2fr 1fr;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   padding: 10px;
 }
@@ -29,11 +29,13 @@ canvas {
   background: #12041f;
   border: 1px solid #3b0764;
   width: 100%;
-  height: 100%;
+  flex: 1;
 }
 .controls {
+  width: 250px;
   padding: 15px;
   border-left: 1px solid #3b0764;
+  box-sizing: border-box;
 }
 .controls h2 {
   margin-top: 0;
@@ -88,12 +90,16 @@ const ctx = canvas.getContext('2d');
 const pctx = phase.getContext('2d');
 const xctx = xt.getContext('2d');
 
-canvas.width = canvas.clientWidth;
-canvas.height = canvas.clientHeight;
-phase.width = phase.clientWidth;
-phase.height = phase.clientHeight;
-xt.width = xt.clientWidth;
-xt.height = xt.clientHeight;
+function resizeCanvas() {
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  phase.width = phase.clientWidth;
+  phase.height = phase.clientHeight;
+  xt.width = xt.clientWidth;
+  xt.height = xt.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 const mEl = document.getElementById('m');
 const kEl = document.getElementById('k');
@@ -111,7 +117,6 @@ let k = +kEl.value;
 let b = +bEl.value;
 const dt = 1/120;
 
-// 用於繪製 x-t 軌跡
 let historyX = [];
 let historyT = [];
 
@@ -125,6 +130,7 @@ function step() {
     const a2 = acceleration(x,v);
     v += 0.5*(a1 + a2)*dt;
     t += dt;
+
     historyX.push(x);
     historyT.push(t);
     if(historyX.length > xt.width) { historyX.shift(); historyT.shift(); }
@@ -166,12 +172,22 @@ function drawPhase() {
 function drawXT() {
     xctx.fillStyle = 'rgba(18,4,31,0.1)';
     xctx.fillRect(0,0,xt.width,xt.height);
+
+    // 歷史軌跡
     xctx.fillStyle = '#e9d5ff';
     historyX.forEach((val,i)=>{
         const px = i;
         const py = xt.height/2 - val*60;
         xctx.fillRect(px, py, 2, 2);
     });
+
+    // 綠點追蹤目前質點
+    xctx.fillStyle = '#00ff00';
+    const currentX = historyX.length-1;
+    const currentY = xt.height/2 - x*60;
+    xctx.beginPath();
+    xctx.arc(currentX, currentY, 5, 0, Math.PI*2);
+    xctx.fill();
 }
 
 function loop() {
@@ -198,6 +214,5 @@ enterBtn.onclick = () => {
 
 loop();
 </script>
-
 </body>
 </html>
