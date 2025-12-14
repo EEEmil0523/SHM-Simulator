@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SHM Simulation Lab</title>
+
+<style>
+/* ===== Global ===== */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+/* ===== HOME PAGE ===== */
+#home {
+  background: #a855f7;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#home h1 span {
+  font-size: 100px;
+  color: #fff;
+  text-transform: uppercase;
+  display: inline-block;
+  animation: bounce 0.4s ease infinite alternate;
+  position: relative;
+}
+
+#home h1 span:nth-child(3) { animation-delay: 0.2s; }
+#home h1 span:nth-child(4) { animation-delay: 0.4s; }
+#home h1 span:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes bounce {
+  100% {
+    top: -20px;
+    text-shadow:
+      0 1px 0 #ccc,
+      0 2px 0 #ccc,
+      0 3px 0 #ccc,
+      0 4px 0 #ccc;
+  }
+}
+
+#enter {
+  margin-top: 40px;
+  padding: 12px 30px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background: #111;
+  color: #fff;
+}
+
+/* ===== LAB ===== */
+#lab {
+  display: none;
+  background: #111;
+  color: #eee;
+}
+
+h1 {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: 500;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: calc(100vh - 50px);
+}
+
+.controls {
+  padding: 15px;
+  border-right: 1px solid #333;
+  overflow-y: auto;
+}
+
+.controls h2 {
+  font-size: 16px;
+  margin-top: 15px;
+  border-bottom: 1px solid #333;
+}
+
+.control {
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.control input {
+  width: 100%;
+}
+
+button {
+  width: 100%;
+  margin-top: 5px;
+  padding: 6px;
+  background: #222;
+  color: #eee;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #333;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+canvas {
+  background: #000;
+  border: 1px solid #333;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="home">
+  <h1>
+    <span>H</span><span>E</span><span>L</span><span>L</span><span>O</span>
+  </h1>
+  <button id="enter">Enter Simulation</button>
+</div>
+
+<!-- ===== LAB ===== -->
+<div id="lab">
+<h1>Simple Harmonic Motion Lab</h1>
+
+<div class="container">
+  <div class="controls">
+
+    <h2>System Parameters</h2>
+    <div class="control">Mass m
+      <input type="range" id="m" min="0.5" max="5" step="0.1" value="1">
+    </div>
+    <div class="control">Spring constant k
+      <input type="range" id="k" min="1" max="50" step="1" value="10">
+    </div>
+    <div class="control">Damping c
+      <input type="range" id="c" min="0" max="5" step="0.1" value="0.5">
+    </div>
+
+    <h2>Driving Force</h2>
+    <div class="control">Amplitude F₀
+      <input type="range" id="F0" min="0" max="20" step="0.5" value="0">
+    </div>
+    <div class="control">Frequency Ω
+      <input type="range" id="Omega" min="0" max="10" step="0.1" value="2">
+    </div>
+
+    <h2>Initial Conditions</h2>
+    <div class="control">x₀
+      <input type="range" id="x0" min="-2" max="2" step="0.1" value="1">
+    </div>
+    <div class="control">v₀
+      <input type="range" id="v0" min="-5" max="5" step="0.1" value="0">
+    </div>
+
+    <h2>Simulation</h2>
+    <div class="control">Time step Δt
+      <input type="range" id="dt" min="0.005" max="0.05" step="0.005" value="0.02">
+    </div>
+
+    <button onclick="paused = !paused">Pause / Resume</button>
+    <button onclick="step()">Single Step</button>
+    <button onclick="reset()">Reset</button>
+
+  </div>
+
+  <div class="panels">
+    <canvas id="anim" width="400" height="250"></canvas>
+    <canvas id="xt" width="400" height="250"></canvas>
+    <canvas id="phase" width="400" height="250"></canvas>
+    <canvas id="energy" width="400" height="250"></canvas>
+  </div>
+</div>
+</div>
+
+<script>
+document.getElementById("enter").onclick = () => {
+  document.getElementById("home").style.display = "none";
+  document.getElementById("lab").style.display = "block";
+};
+
+const animCtx = document.getElementById("anim").getContext("2d");
+const xtCtx = document.getElementById("xt").getContext("2d");
+const phCtx = document.getElementById("phase").getContext("2d");
+const enCtx = document.getElementById("energy").getContext("2d");
+
+let x, v, a, t = 0;
+let paused = false;
+
+let xtData = [], phaseData = [], energyData = [];
+
+function acc(x, v, t) {
+  return (F0.value * Math.sin(Omega.value * t) - c.value * v - k.value * x) / m.value;
+}
+
+function reset() {
+  x = +x0.value;
+  v = +v0.value;
+  a = acc(x, v, t);
+  t = 0;
+  xtData = [];
+  phaseData = [];
+  energyData = [];
+}
+
+function step() {
+  const dtv = +dt.value;
+  v += 0.5 * a * dtv;
+  x += v * dtv;
+  a = acc(x, v, t);
+  v += 0.5 * a * dtv;
+  t += dtv;
+}
+
+function drawSpring() {
+  animCtx.clearRect(0,0,400,250);
+  animCtx.strokeStyle = "#888";
+  animCtx.beginPath();
+  animCtx.moveTo(50,125);
+  animCtx.lineTo(200 + x*50,125);
+  animCtx.stroke();
+
+  animCtx.fillStyle = "#4aa3ff";
+  animCtx.beginPath();
+  animCtx.arc(220 + x*50,125,12,0,Math.PI*2);
+  animCtx.fill();
+}
+
+function drawGraph(ctx, data, sx, sy) {
+  ctx.clearRect(0,0,400,250);
+  ctx.strokeStyle = "#0f0";
+  ctx.beginPath();
+  data.forEach((p,i)=>{
+    const px = 200 + p[0]*sx;
+    const py = 125 - p[1]*sy;
+    if(i===0) ctx.moveTo(px,py);
+    else ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+}
+
+function loop() {
+  if(!paused) step();
+
+  xtData.push([t, x]);
+  phaseData.push([x, v]);
+  energyData.push([t, 0.5*k.value*x*x + 0.5*m.value*v*v]);
+
+  xtData = xtData.slice(-300);
+  phaseData = phaseData.slice(-300);
+  energyData = energyData.slice(-300);
+
+  drawSpring();
+  drawGraph(xtCtx, xtData, 20, 50);
+  drawGraph(phCtx, phaseData, 50, 20);
+  drawGraph(enCtx, energyData, 20, 10);
+
+  requestAnimationFrame(loop);
+}
+
+reset();
+loop();
+</script>
+
+</body>
+</html>
