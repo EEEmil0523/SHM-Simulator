@@ -1,129 +1,201 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>SHM Simulation Lab</title>
+<title>簡諧運動教學模擬器</title>
 <style>
-body{margin:0;font-family:'Segoe UI',Tahoma,Verdana,sans-serif;overflow:hidden;}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  background: #111;
+  color: #eee;
+}
 
-/* ===== HOME ===== */
-#home{background:#a855f7;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;}
-#home h1{font-weight:900;font-size:100px;color:#fff;margin:0;z-index:2;position:relative;}
-#home h1 span{display:inline-block;animation:bounce 0.6s ease-in-out infinite alternate;}
-#home h1 span:nth-child(1){animation-delay:0s;} #home h1 span:nth-child(2){animation-delay:0.1s;}
-#home h1 span:nth-child(3){animation-delay:0.2s;} #home h1 span:nth-child(4){animation-delay:0.3s;}
-#home h1 span:nth-child(5){animation-delay:0.4s;}
-@keyframes bounce{0%{transform:translateY(0);}50%{transform:translateY(-25px);}100%{transform:translateY(0);}}
-.eye{position:absolute;width:120px;height:120px;background:#fff;border:4px solid #000;border-radius:50%;top:15%;overflow:hidden;z-index:1;}
-.eye.left{left:25%;} .eye.right{right:25%;}
-.pupil{position:absolute;width:40px;height:40px;background:#000;border-radius:50%;top:40px;left:40px;transition: transform 0.1s linear;}
-.eye::before{content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:#a855f7;transform:scaleY(0);transform-origin:top;animation:blink 5s infinite;}
-@keyframes blink{0%,90%,100%{transform:scaleY(0);}92%,94%{transform:scaleY(1);}}
+h1 {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: 500;
+}
 
-#enter{margin-top:40px;padding:12px 20px;font-size:18px;border:none;cursor:pointer;background:#111;color:#fff;transition:all 0.1s;box-shadow:0 4px #0c0c0c;border-radius:6px;}
-#enter:hover{background:#222;}
-#enter:active{transform:translateY(4px);box-shadow:0 1px #0c0c0c;background:#222;}
+.container {
+  display: flex;
+  height: calc(100vh - 50px);
+}
 
-/* ===== LAB ===== */
-#lab{display:none;background:#111;color:#eee;font-family:'Segoe UI',Tahoma,Verdana,sans-serif;}
-h1{text-align:center;margin:10px 0;font-weight:600;}
-.container{display:grid;grid-template-columns:300px 1fr;height:calc(100vh-50px);}
-.controls{padding:15px;border-right:1px solid #333;overflow-y:auto;}
-.controls h2{font-size:16px;margin-top:15px;border-bottom:1px solid #333;}
-.control{margin:8px 0;font-size:13px;}
-.control input{width:100%;}
-button{width:100%;margin-top:5px;padding:6px;background:#222;color:#eee;border:1px solid #444;cursor:pointer;}
-button:hover{background:#333;}
-.panels{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;padding:10px;}
-canvas{background:#000;border:1px solid #333;}
+.controls {
+  width: 300px;
+  padding: 15px;
+  border-right: 1px solid #333;
+  overflow-y: auto;
+}
+
+.controls h2 {
+  font-size: 16px;
+  margin-top: 15px;
+  border-bottom: 1px solid #333;
+}
+
+.control {
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.control input {
+  width: 100%;
+}
+
+button {
+  width: 100%;
+  margin-top: 5px;
+  padding: 6px;
+  background: #222;
+  color: #eee;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #333;
+}
+
+#canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+canvas {
+  background: #000;
+  border: 1px solid #333;
+}
+#info {
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
+}
 </style>
 </head>
 <body>
+<h1>簡諧運動教學模擬器</h1>
 
-<!-- HOME -->
-<div id="home">
-  <div class="eye left"><div class="pupil"></div></div>
-  <div class="eye right"><div class="pupil"></div></div>
-  <h1><span>H</span><span>E</span><span>L</span><span>L</span><span>O</span></h1>
-  <button id="enter">Enter</button>
-</div>
-
-<!-- LAB -->
-<div id="lab">
-<h1>Simple Harmonic Motion Lab</h1>
 <div class="container">
   <div class="controls">
-    <h2>System Parameters</h2>
-    <div class="control">Mass m<input type="range" id="m" min="0.5" max="5" step="0.1" value="1"></div>
-    <div class="control">Spring k<input type="range" id="k" min="1" max="50" step="1" value="10"></div>
-    <div class="control">Damping c<input type="range" id="c" min="0" max="5" step="0.1" value="0.5"></div>
-    <h2>Driving Force</h2>
-    <div class="control">Amplitude F₀<input type="range" id="F0" min="0" max="20" step="0.5" value="0"></div>
-    <div class="control">Frequency Ω<input type="range" id="Omega" min="0" max="10" step="0.1" value="2"></div>
-    <h2>Initial Conditions</h2>
-    <div class="control">x₀<input type="range" id="x0" min="-2" max="2" step="0.1" value="1"></div>
-    <div class="control">v₀<input type="range" id="v0" min="-5" max="5" step="0.1" value="0"></div>
-    <h2>Simulation</h2>
-    <div class="control">Δt<input type="range" id="dt" min="0.005" max="0.05" step="0.005" value="0.02"></div>
-    <button onclick="paused=!paused">Pause/Resume</button>
-    <button onclick="singleStep()">Single Step</button>
-    <button onclick="resetSim()">Reset</button>
+
+    <h2>系統參數</h2>
+    <div class="control">質量 m
+      <input type="range" id="m" min="0.5" max="5" step="0.1" value="1">
+    </div>
+    <div class="control">彈性常數 k
+      <input type="range" id="k" min="1" max="50" step="1" value="10">
+    </div>
+    <div class="control">阻尼係數 c
+      <input type="range" id="c" min="0" max="5" step="0.1" value="0.5">
+    </div>
+
+    <h2>外力</h2>
+    <div class="control">外力振幅 F₀
+      <input type="range" id="F0" min="0" max="20" step="0.5" value="0">
+    </div>
+    <div class="control">外力頻率 Ω
+      <input type="range" id="Omega" min="0" max="10" step="0.1" value="2">
+    </div>
+
+    <h2>初始條件</h2>
+    <div class="control">初始位移 x₀
+      <input type="range" id="x0" min="-2" max="2" step="0.1" value="1">
+    </div>
+    <div class="control">初始速度 v₀
+      <input type="range" id="v0" min="-5" max="5" step="0.1" value="0">
+    </div>
+
+    <h2>模擬控制</h2>
+    <div class="control">時間步長 Δt
+      <input type="range" id="dt" min="0.005" max="0.05" step="0.005" value="0.02">
+    </div>
+    <button onclick="paused = !paused">暫停 / 繼續</button>
+    <button onclick="step()">單步模擬</button>
+    <button onclick="reset()">重置</button>
   </div>
-  <div class="panels">
-    <canvas id="anim" width="400" height="250"></canvas>
-    <canvas id="xt" width="400" height="250"></canvas>
-    <canvas id="phase" width="400" height="250"></canvas>
-    <canvas id="energy" width="400" height="250"></canvas>
+
+  <div id="canvas-container">
+    <canvas id="anim" width="600" height="250"></canvas>
   </div>
 </div>
-</div>
+
+<div id="info"></div>
 
 <script>
-// 切換首頁和 LAB
-const home=document.getElementById("home");
-const lab=document.getElementById("lab");
-document.getElementById("enter").onclick=()=>{home.style.display="none";lab.style.display="block";};
+const canvas = document.getElementById("anim");
+const ctx = canvas.getContext("2d");
 
-// 平滑眼睛跟隨
-const leftPupil=document.querySelector(".eye.left .pupil");
-const rightPupil=document.querySelector(".eye.right .pupil");
-let mouseX=0, mouseY=0;
-document.addEventListener("mousemove",e=>{mouseX=e.clientX; mouseY=e.clientY;});
-function movePupil(eye,pupil){
-  const rect=eye.getBoundingClientRect();
-  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-  const dx=mouseX-cx, dy=mouseY-cy;
-  const angle=Math.atan2(dy,dx), r=30;
-  const targetX=r*Math.cos(angle), targetY=r*Math.sin(angle);
-  const current=eye._current||{x:0,y:0};
-  current.x += (targetX - current.x)*0.15;
-  current.y += (targetY - current.y)*0.15;
-  pupil.style.transform=`translate(${current.x}px,${current.y}px)`;
-  eye._current=current;
-  requestAnimationFrame(()=>movePupil(eye,pupil));
+const mEl = document.getElementById("m");
+const kEl = document.getElementById("k");
+const cEl = document.getElementById("c");
+const F0El = document.getElementById("F0");
+const OmegaEl = document.getElementById("Omega");
+const x0El = document.getElementById("x0");
+const v0El = document.getElementById("v0");
+const dtEl = document.getElementById("dt");
+const infoEl = document.getElementById("info");
+
+let x, v, a, t=0;
+let paused = false;
+
+function acceleration(x, v, t){
+  return (F0El.value * Math.sin(OmegaEl.value * t) - cEl.value*v - kEl.value*x)/mEl.value;
 }
-movePupil(document.querySelector(".eye.left"), leftPupil);
-movePupil(document.querySelector(".eye.right"), rightPupil);
 
-// LAB 彈簧動畫
-const canvas=document.getElementById("anim"); const ctx=canvas.getContext("2d");
-let m=document.getElementById("m"),k=document.getElementById("k"),c=document.getElementById("c"),
-    F0=document.getElementById("F0"),Omega=document.getElementById("Omega"),
-    x0=document.getElementById("x0"),v0=document.getElementById("v0"),dt=document.getElementById("dt");
-let x=+x0.value,v=+v0.value,a=0,t=0,paused=false;
-function acc(x,v,t){return (F0.value*Math.sin(Omega.value*t)-c.value*v-k.value*x)/m.value;}
-function resetSim(){x=+x0.value;v=+v0.value;a=acc(x,v,t);t=0;}
-function singleStep(){step();draw();}
-function step(){const dtv=+dt.value;v+=0.5*a*dtv;x+=v*dtv;a=acc(x,v,t);v+=0.5*a*dtv;t+=dtv;}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
-  const startX=50,endX=200+x*50,y=canvas.height/2;
-  const seg=12; ctx.strokeStyle="#888"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(startX,y);
-  for(let i=1;i<=seg;i++){let px=startX+(endX-startX)/seg*i;let py=y+(i%2===0?5:-5);if(i===seg)py=y;ctx.lineTo(px,py);}
+function reset(){
+  x = +x0El.value;
+  v = +v0El.value;
+  a = acceleration(x, v, t);
+  t = 0;
+}
+
+function step(){
+  const dt = +dtEl.value;
+  v += 0.5 * a * dt;
+  x += v * dt;
+  a = acceleration(x, v, t);
+  v += 0.5 * a * dt;
+  t += dt;
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // 畫彈簧
+  const centerY = canvas.height/2;
+  const startX = 50;
+  const massX = 300 + x*50;
+  ctx.strokeStyle = "#888";
+  ctx.beginPath();
+  ctx.moveTo(startX, centerY);
+  ctx.lineTo(massX-20, centerY);
   ctx.stroke();
-  ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(endX+20,y,12,0,Math.PI*2); ctx.fill();
+
+  // 畫質點
+  ctx.fillStyle = "#4aa3ff";
+  ctx.beginPath();
+  ctx.arc(massX, centerY, 15, 0, Math.PI*2);
+  ctx.fill();
+
+  // 顯示文字註解
+  infoEl.innerHTML = `
+位移 x = ${x.toFixed(2)} m<br>
+速度 v = ${v.toFixed(2)} m/s<br>
+角頻率 ω = ${Math.sqrt(kEl.value/mEl.value).toFixed(2)} rad/s
+`;
 }
-function loop(){if(!paused){step();draw();} requestAnimationFrame(loop);}
-resetSim();loop();
+
+function loop(){
+  if(!paused) step();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+reset();
+loop();
 </script>
 </body>
 </html>
