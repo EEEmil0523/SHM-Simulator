@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>SHM Simulation Lab</title>
-
 <style>
 /* ===== Global ===== */
 body {
@@ -26,23 +25,20 @@ body {
   color: #fff;
   text-transform: uppercase;
   display: inline-block;
-  animation: bounce 0.4s ease infinite alternate;
   position: relative;
+  animation: bounce 0.6s ease-in-out infinite alternate;
 }
 
-#home h1 span:nth-child(3) { animation-delay: 0.2s; }
-#home h1 span:nth-child(4) { animation-delay: 0.4s; }
-#home h1 span:nth-child(5) { animation-delay: 0.6s; }
+#home h1 span:nth-child(1){animation-delay:0s;}
+#home h1 span:nth-child(2){animation-delay:0.1s;}
+#home h1 span:nth-child(3){animation-delay:0.2s;}
+#home h1 span:nth-child(4){animation-delay:0.3s;}
+#home h1 span:nth-child(5){animation-delay:0.4s;}
 
 @keyframes bounce {
-  100% {
-    top: -20px;
-    text-shadow:
-      0 1px 0 #ccc,
-      0 2px 0 #ccc,
-      0 3px 0 #ccc,
-      0 4px 0 #ccc;
-  }
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-25px); }
+  100% { transform: translateY(0); }
 }
 
 #enter {
@@ -121,7 +117,6 @@ canvas {
 }
 </style>
 </head>
-
 <body>
 
 <!-- ===== HOME ===== -->
@@ -225,27 +220,39 @@ function step() {
   t += dtv;
 }
 
+// 畫彈簧和白球
 function drawSpring() {
   animCtx.clearRect(0,0,400,250);
+  const startX = 50, startY = 125;
+  const endX = 200 + x*50, endY = 125;
+  const segments = 12;
   animCtx.strokeStyle = "#888";
   animCtx.beginPath();
-  animCtx.moveTo(50,125);
-  animCtx.lineTo(200 + x*50,125);
+  animCtx.moveTo(startX,startY);
+  for(let i=1;i<=segments;i++){
+    let px = startX + (endX-startX)/segments*i;
+    let py = startY + ((i%2===0)?5:-5);
+    if(i===segments) py = endY;
+    animCtx.lineTo(px, py);
+  }
   animCtx.stroke();
 
-  animCtx.fillStyle = "#4aa3ff";
+  animCtx.fillStyle = "#fff";
   animCtx.beginPath();
-  animCtx.arc(220 + x*50,125,12,0,Math.PI*2);
+  animCtx.arc(endX+20, endY, 12, 0, Math.PI*2);
   animCtx.fill();
 }
 
-function drawGraph(ctx, data, sx, sy) {
+// 繪圖自動縮放
+function drawGraph(ctx, data, scaleX, scaleY) {
   ctx.clearRect(0,0,400,250);
   ctx.strokeStyle = "#0f0";
   ctx.beginPath();
+  const maxY = Math.max(...data.map(p=>Math.abs(p[1])), 1);
+  const sY = scaleY / maxY;
   data.forEach((p,i)=>{
-    const px = 200 + p[0]*sx;
-    const py = 125 - p[1]*sy;
+    const px = 200 + p[0]*scaleX;
+    const py = 125 - p[1]*sY;
     if(i===0) ctx.moveTo(px,py);
     else ctx.lineTo(px,py);
   });
